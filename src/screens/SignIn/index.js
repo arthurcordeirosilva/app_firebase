@@ -2,35 +2,45 @@ import React, {useState} from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import auth from '@react-native-firebase/auth';
 import * as Animatable from 'react-native-animatable';
+import { useNavigation} from '@react-navigation/native';
+import { auth, db } from  './../../../FirebaseConfig';
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+
+
 
 export default function SignIn(){
+    const navigation = useNavigation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    function signIn(){
-        if (!email.includes('@') || password.length < 6) {
-            Alert.alert('Erro', 'Email inválido ou senha muito curta.');
-            return;
+    const signIn = async () => {
+        if (email === '' || password === '') {
+          Alert.alert('Erro', 'Preencha todos os campos');
+          return;
         }
+    
         setLoading(true);
-        auth()
-        .signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-            setLoading(false);
-            console.log('user: ', userCredential);
-        }).catch(error => {
-            setLoading(false);
-            if(error.code === 'auth/invalid-email'){
-                console.log('email inválido');
-                Alert.alert('Erro', 'Email inválido.');
-            }
-            if (error.code === 'auth/wrong-password') {
-                console.log('Senha incorreta');
-                Alert.alert('Erro', 'Senha incorreta.');
-            }
-        });
-    }   
+    
+        try {
+          await auth().signInWithEmailAndPassword(email, password);
+          Alert.alert('Sucesso', 'Login realizado com sucesso');
+          // Navegar para a próxima tela ou dashboard
+          navigation.replace('HomeScreen');
+        } catch (error) {
+          console.error(error);
+          if (error.code === 'auth/user-not-found') {
+            Alert.alert('Erro', 'Usuário não encontrado');
+          } else if (error.code === 'auth/wrong-password') {
+            Alert.alert('Erro', 'Senha incorreta');
+          } else {
+            Alert.alert('Erro', 'Algo deu errado. Tente novamente.');
+          }
+        } finally {
+          setLoading(false);
+        }
+      };
+   
   
     return(
         <View style={styles.container}>
